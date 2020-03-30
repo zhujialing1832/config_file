@@ -17,46 +17,9 @@ Wants=network-online.target
 After=network-online.target
 
 [Service]
-LimitMEMLOCK=infinity
+LimitMEMLOCK=infinity   #  新增！！！
 RuntimeDirectory=elasticsearch
-PrivateTmp=true
-Environment=ES_HOME=/usr/share/elasticsearch
-Environment=ES_PATH_CONF=/etc/elasticsearch
-Environment=PID_DIR=/var/run/elasticsearch
-EnvironmentFile=-/etc/sysconfig/elasticsearch
-
-WorkingDirectory=/usr/share/elasticsearch
-
-User=elasticsearch
-Group=elasticsearch
-
-ExecStart=/usr/share/elasticsearch/bin/elasticsearch -p ${PID_DIR}/elasticsearch.pid --quiet
-
-StandardOutput=journal
-StandardError=inherit
-
-LimitNOFILE=65536
-
-LimitNPROC=4096
-
-LimitAS=infinity
-
-LimitFSIZE=infinity
-
-TimeoutStopSec=0
-
-KillSignal=SIGTERM
-
-KillMode=process
-
-SendSIGKILL=no
-
-SuccessExitStatus=143
-
-[Install]
-WantedBy=multi-user.target
-
-
+......
 
 #  3节点集群主机配置文件
 [root@es-82 /data/ES_soft]# grep -vE "^#" /etc/elasticsearch/elasticsearch.yml 
