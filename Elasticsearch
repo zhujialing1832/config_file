@@ -1,6 +1,7 @@
 #  单节点主机
 [root@es-80 ~]# grep -vE "^#" /etc/elasticsearch/elasticsearch.yml 
-cluster.name: my_elasticsearch_cluser 
+# cluster.name: my_elasticsearch_cluser  这个集群名称在多台的时候会报错
+cluster.name: es
 node.name: ES01 
 path.data: /data/elasticsearch
 path.logs: /var/log/elasticsearch
