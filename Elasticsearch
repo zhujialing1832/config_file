@@ -1,3 +1,13 @@
+#  操作脚本
+[root@es-80 /server/scripts]# cat elasticsearch.sh   #  本脚本避免使用systemctl操作，因为systemctl命令操作时比较麻烦
+#!/bin/bash
+# 2020年3月30日16:01:53
+# created by zhujialing
+# to stop start restart elasticsearch
+action="$1"
+systemctl "$action" elasticsearch.service
+
+
 #  单节点主机
 [root@es-80 ~]# grep -vE "^#" /etc/elasticsearch/elasticsearch.yml 
 # cluster.name: my_elasticsearch_cluser  这个集群名称在多台的时候会报错
