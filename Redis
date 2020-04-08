@@ -3,7 +3,7 @@
 ### 以守护进程模式启动
 daemonize yes
 ### 绑定的主机地址，绑定这个IP地址所在的网卡
-bind 172.16.168.158 127.0.0.1
+bind 10.0.0.87 127.0.0.1
 
 ### 监听端口
 port 6379
@@ -30,9 +30,9 @@ appendfilename "appendonly.aof"
 ### 以守护进程模式启动
 daemonize yes
 ### 绑定的主机地址，绑定这个IP地址所在的网卡
-bind 172.16.168.158 127.0.0.1
+bind 10.0.0.87 127.0.0.1
 #  指定主节点
-slaveof 172.16.168.158 6379
+slaveof 10.0.0.88 6379
 ### 监听端口
 port 6379
 ### pid文件和log文件的保存地址
@@ -56,7 +56,7 @@ appendfilename "appendonly.aof"
 #############################################  哨兵  #############################################
 6379实例
 daemonize yes
-bind 172.16.168.158 127.0.0.1
+bind 10.0.0.87 127.0.0.1
 port 6379
 pidfile /opt/redis_cluster/redis_6379/pid/redis_6379.pid
 logfile /opt/redis_cluster/redis_6379/logs/redis_6379.log
@@ -66,8 +66,8 @@ dir /data/redis_cluster/redis_6379
 
 
 daemonize yes
-bind 172.16.168.155 127.0.0.1
-slaveof 172.16.168.158 6379
+bind 110.0.0.88 127.0.0.1
+slaveof 10.0.0.87 6379
 port 6379
 pidfile /opt/redis_cluster/redis_6379/pid/redis_6379.pid
 logfile /opt/redis_cluster/redis_6379/logs/redis_6379.log
@@ -77,12 +77,25 @@ dir /data/redis_cluster/redis_6379
 
 26379实例
 daemonize yes
-bind 172.16.168.158 127.0.0.1
-port 6379
-logfile /opt/redis_cluster/redis_6379/logs/redis_6379.log
-dir /data/redis_cluster/redis_6379
+bind 10.0.0.87 127.0.0.1
+port 26379
+logfile /opt/redis_cluster/redis_26379/logs/redis_26379.log
+dir /data/redis_cluster/redis_26379
 
-sentinel monitor mymaster 172.16.168.158 6379 2
+sentinel monitor mymaster 10.0.0.87 6379 2
 sentinel down-after-milliseconds mymaster 3000
 sentinel parallel-syncs mymaster 1
 sentinel failover-timeout mymaster 18000
+
+
+daemonize yes
+bind 10.0.0.88 127.0.0.1
+port 26379
+logfile /opt/redis_cluster/redis_26379/logs/redis_26379.log
+dir /data/redis_cluster/redis_26379
+
+sentinel monitor mymaster 10.0.0.87 6379 2
+sentinel down-after-milliseconds mymaster 3000
+sentinel parallel-syncs mymaster 1
+sentinel failover-timeout mymaster 18000
+
