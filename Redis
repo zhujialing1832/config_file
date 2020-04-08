@@ -1,0 +1,88 @@
+#  单节点
+[root@oldboyedu conf]# cat redis_6379.conf
+### 以守护进程模式启动
+daemonize yes
+### 绑定的主机地址，绑定这个IP地址所在的网卡
+bind 172.16.168.158 127.0.0.1
+
+### 监听端口
+port 6379
+### pid文件和log文件的保存地址
+pidfile /opt/redis_cluster/redis_6379/pid/redis_6379.pid
+logfile /opt/redis_cluster/redis_6379/logs/redis_6379.log
+### 设置数据库的数量，默认数据库为0
+databases 16
+### 指定本地持久化文件的文件名
+dbfilename redis_6379.rdb
+### 本地数据库目录，主要用于存储rdb文件
+dir /data/redis_cluster/redis_6379
+### 是否打开aof日志功能
+appendonly yes
+# 每1个命令，都立即同步到aof
+appendfsync always
+# 每秒写1次
+appendfsync everysec
+# 写入工作交给操作系统，由操作系统判断缓冲区大小，统一写入到aof
+appendfilename "appendonly.aof"
+
+#  主从
+[root@oldboyedu conf]# cat redis_6379.conf
+### 以守护进程模式启动
+daemonize yes
+### 绑定的主机地址，绑定这个IP地址所在的网卡
+bind 172.16.168.158 127.0.0.1
+#  指定主节点
+slaveof 172.16.168.158 6379
+### 监听端口
+port 6379
+### pid文件和log文件的保存地址
+pidfile /opt/redis_cluster/redis_6379/pid/redis_6379.pid
+logfile /opt/redis_cluster/redis_6379/logs/redis_6379.log
+### 设置数据库的数量，默认数据库为0
+databases 16
+### 指定本地持久化文件的文件名
+dbfilename redis_6379.rdb
+### 本地数据库目录，主要用于存储rdb文件
+dir /data/redis_cluster/redis_6379
+### 是否打开aof日志功能
+appendonly yes
+# 每1个命令，都立即同步到aof
+appendfsync always
+# 每秒写1次
+appendfsync everysec
+# 写入工作交给操作系统，由操作系统判断缓冲区大小，统一写入到aof
+appendfilename "appendonly.aof"
+
+#  哨兵
+6379实例
+daemonize yes
+bind 172.16.168.158 127.0.0.1
+port 6379
+pidfile /opt/redis_cluster/redis_6379/pid/redis_6379.pid
+logfile /opt/redis_cluster/redis_6379/logs/redis_6379.log
+databases 16
+dbfilename redis_6379.rdb
+dir /data/redis_cluster/redis_6379
+
+
+daemonize yes
+bind 172.16.168.155 127.0.0.1
+slaveof 172.16.168.158 6379
+port 6379
+pidfile /opt/redis_cluster/redis_6379/pid/redis_6379.pid
+logfile /opt/redis_cluster/redis_6379/logs/redis_6379.log
+databases 16
+dbfilename redis_6379.rdb
+dir /data/redis_cluster/redis_6379
+
+26379实例
+daemonize yes
+bind 172.16.168.158 127.0.0.1
+port 6379
+logfile /opt/redis_cluster/redis_6379/logs/redis_6379.log
+dir /data/redis_cluster/redis_6379
+
+sentinel monitor mymaster 172.16.168.158 6379 2
+sentinel down-after-milliseconds mymaster 3000
+sentinel parallel-syncs mymaster 1
+sentinel failover-timeout mymaster 18000
