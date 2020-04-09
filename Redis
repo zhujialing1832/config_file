@@ -99,3 +99,87 @@ sentinel down-after-milliseconds mymaster 3000
 sentinel parallel-syncs mymaster 1
 sentinel failover-timeout mymaster 18000
 
+
+
+#############################################  集群  #############################################
+10.0.0.87节点
+#  6380实例
+daemonize yes
+bind 10.0.0.87 127.0.0.1
+port 6380
+pidfile "/opt/redis_cluster/redis_6380/pid/redis_6380.pid"
+logfile "/opt/redis_cluster/redis_6380/logs/redis_6380.log"
+dbfilename "redis_6380.rdb"
+dir "/data/redis_cluster/redis_6380"
+
+cluster-enabled yes
+cluster-config-file nodes_6380.conf
+cluster-node-timeout 15000
+
+#  6381实例
+daemonize yes
+bind 10.0.0.87 127.0.0.1
+port 6381
+pidfile "/opt/redis_cluster/redis_6381/pid/redis_6381.pid"
+logfile "/opt/redis_cluster/redis_6381/logs/redis_6381.log"
+dbfilename "redis_6381.rdb"
+dir "/data/redis_cluster/redis_6381"
+
+cluster-enabled yes
+cluster-config-file nodes_6381.conf
+cluster-node-timeout 15000
+
+10.0.0.88节点
+#  6380实例
+daemonize yes
+bind 10.0.0.88 127.0.0.1
+port 6380
+pidfile "/opt/redis_cluster/redis_6380/pid/redis_6380.pid"
+logfile "/opt/redis_cluster/redis_6380/logs/redis_6380.log"
+dbfilename "redis_6380.rdb"
+dir "/data/redis_cluster/redis_6380"
+
+cluster-enabled yes
+cluster-config-file nodes_6380.conf
+cluster-node-timeout 15000
+
+#  6381实例
+daemonize yes
+bind 10.0.0.88 127.0.0.1
+port 6381
+pidfile "/opt/redis_cluster/redis_6381/pid/redis_6381.pid"
+logfile "/opt/redis_cluster/redis_6381/logs/redis_6381.log"
+dbfilename "redis_6381.rdb"
+dir "/data/redis_cluster/redis_6381"
+
+cluster-enabled yes
+cluster-config-file nodes_6381.conf
+cluster-node-timeout 15000
+
+
+10.0.0.89节点 
+#  6380实例
+daemonize yes
+bind 10.0.0.89 127.0.0.1
+port 6380
+pidfile "/opt/redis_cluster/redis_6380/pid/redis_6380.pid"
+logfile "/opt/redis_cluster/redis_6380/logs/redis_6380.log"
+dbfilename "redis_6380.rdb"
+dir "/data/redis_cluster/redis_6380"
+
+cluster-enabled yes
+cluster-config-file nodes_6380.conf
+cluster-node-timeout 15000
+
+#  6381实例
+daemonize yes
+bind 10.0.0.89 127.0.0.1
+port 6381
+pidfile "/opt/redis_cluster/redis_6381/pid/redis_6381.pid"
+logfile "/opt/redis_cluster/redis_6381/logs/redis_6381.log"
+dbfilename "redis_6381.rdb"
+dir "/data/redis_cluster/redis_6381"
+
+cluster-enabled yes
+cluster-config-file nodes_6381.conf
+cluster-node-timeout 15000
