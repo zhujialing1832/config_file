@@ -274,7 +274,12 @@ do
     sleep 0.5
 done
 
-
+[root@redis01 ~]# cat input_key.sh 
+#!/bin/bash
+for i in $(seq 1 1000)
+do
+    redis-cli -c -h redis01 -p 6379 set zhujialing_k_${i} zhujialing_v_${i} && echo "set zhujialing_k_${i} is ok"
+done
 #############################################  redis集群节点数据读取脚本  #############################################
 [root@redis01 ~]# cat read.sh 
 #!/bin/bash
@@ -284,3 +289,19 @@ do
     sleep 0.5
 done
 
+
+#############################################  redis单节点数据转移脚本  #############################################
+[root@redis01 ~]# cat redis_6379_to_6380.conf 
+[source]
+type: single
+servers:
+- 10.0.0.87:6379
+
+[target]
+type: redis cluster
+servers:
+- 10.0.0.87:6380
+
+[common]
+listen: 0.0.0.0:8888
+source_safe: true
