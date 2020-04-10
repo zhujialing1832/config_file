@@ -186,7 +186,7 @@ cluster-node-timeout 15000
 
 
 
-redis控制脚本：
+#############################################  redis集群节点控制脚本  #############################################
 [root@redis01 ~]# cat redis_shell.sh 
 #!/bin/bash
 
@@ -256,3 +256,31 @@ case $1 in
     *)
         USAG
 esac
+
+#############################################  redis集群节点数据插入脚本  #############################################
+[root@redis01 ~]# cat insert_data_cluster.sh 
+#!/bin/bash
+for i in $(seq 1 10000)
+do
+    redis-cli -c -h redis01 -p 6380 set k_${i} v_${i} && echo "set k_${i} is ok"
+done
+
+[root@redis01 ~]# cat write.sh 
+#!/bin/bash
+for i in {1..10000}
+do
+    redis-cli -c -h redis02 -p 6380 set k_${i} v_${i}
+    echo "k_${i}"
+    sleep 0.5
+done
+
+
+#############################################  redis集群节点数据读取脚本  #############################################
+[root@redis01 ~]# cat read.sh 
+#!/bin/bash
+for i in {1..10000}
+do
+    redis-cli -c -h redis02 -p 6380 get k_${i}
+    sleep 0.5
+done
+
