@@ -42,3 +42,16 @@ network.host: 10.0.0.82,127.0.0.1
 http.port: 9200
 discovery.zen.ping.unicast.hosts: ["10.0.0.81", "10.0.0.82"]  # 写任意两节点的ip地址就可以，不用都写上
 discovery.zen.minimum_master_nodes: 2
+
+
+
+
+
+
+curl -XPUT  'localhost:9200/userinfo/user/?pretty' -H 'Content-Type: application/json' -d' {
+"sid": 10,
+"first_name": "John",
+"last_name" : "Smith",
+"age" : 25,
+"about" : "I like to go rock climbing", "Interests": [ "sports", "music" ]
+}'
