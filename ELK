@@ -1,1 +1,14 @@
+##############################################  Elasticsearch配置文件  ##############################################
+[root@db01 /data/soft]# grep "^[a-Z]" /etc/elasticsearch/elasticsearch.yml 
+node.name: node-1
+path.data: /data/elasticsearch
+path.logs: /var/log/elasticsearch
+network.host: 10.0.0.90,127.0.0.1 
+http.port: 9200
 
+##############################################  Kibana配置文件  ##############################################
+[root@db01 /data/soft]# grep "^[a-Z]" /etc/kibana/kibana.yml 
+server.port: 5601
+server.host: "10.0.0.90"
+server.name: "db01"
+elasticsearch.hosts: ["http://10.0.0.90:9200"]
