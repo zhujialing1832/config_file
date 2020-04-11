@@ -12,3 +12,58 @@ server.port: 5601
 server.host: "10.0.0.90"
 server.name: "db01"
 elasticsearch.hosts: ["http://10.0.0.90:9200"]
+
+##############################################  Filebeat配置文件——解析Nginx普通日志  ##############################################
+- type: log
+
+  # Change to true to enable this input configuration.
+  enabled: true
+
+  # Paths that should be crawled and fetched. Glob based paths.
+  paths:
+    - /var/log/nginx/access.log
+#================================ Outputs =====================================
+
+# Configure what output to use when sending the data collected by the beat.
+
+#-------------------------- Elasticsearch output ------------------------------
+output.elasticsearch:
+  # Array of hosts to connect to.
+  hosts: ["http://10.0.0.90:9200"]
+
+
+##############################################  Filebeat配置文件——解析Nginx Json日志  ##############################################
+Nginx的日志改成Json格式：
+log_format json  '{ "time_local": "$time_local", '
+                          '"remote_addr": "$remote_addr", '
+                          '"referer": "$http_referer", '
+                          '"request": "$request", '
+                          '"status": $status, '
+                          '"bytes": $body_bytes_sent, '
+                          '"agent": "$http_user_agent", '
+                          '"x_forwarded": "$http_x_forwarded_for", '
+                          '"up_addr": "$upstream_addr",'
+                          '"up_host": "$upstream_http_host",'
+                          '"upstream_time": "$upstream_response_time",'
+                          '"request_time": "$request_time"'
+' }';
+
+filebeat.inputs:
+- type: log
+  enabled: true 
+  paths:
+    - /var/log/nginx/access.log
+  json.keys_under_root: true
+  json.overwrite_keys: true
+
+......
+output.elasticsearch:
+  hosts: ["http://10.0.0.90:9200"]
+  index: "nginx-%{[beat.version]}-%{+yyyy.MM}"
+setup.template.name: "nginx"
+setup.template.pattern: "nginx-*"
+setup.template.enabled: false
+setup.template.overwrite: true
+......
+
+#######################################  Filebeat配置文件——解析Nginx Json正常日志和普通错误日志  #######################################
