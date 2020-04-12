@@ -67,3 +67,79 @@ setup.template.overwrite: true
 ......
 
 #######################################  Filebeat配置文件——解析Nginx Json正常日志和普通错误日志  #######################################
+[root@db01 ~]# grep -vE "^$|#" /etc/filebeat/filebeat.yml 
+filebeat.inputs:
+- type: log
+  enabled: true 
+  paths:
+    - /var/log/nginx/access.log
+  json.keys_under_root: true
+  json.overwrite_keys: true
+  tags: ["access"] 
+- type: log
+  enabled: true 
+  paths:
+    - /var/log/nginx/error.log
+  tags: ["error"]
+
+ 
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 3
+setup.kibana:
+  host: "10.0.0.90:5601"
+output.elasticsearch:
+  hosts: ["http://10.0.0.90:9200"]
+  indices:
+    - index: "nginx-access-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        tags: "access"
+    - index: "nginx-error-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        tags: "error"
+   
+setup.template.name: "nginx"
+setup.template.pattern: "nginx-*"
+setup.template.enabled: false
+setup.template.overwrite: true
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+  
+  
+#######################################  Filebeat配置文件——解析Tomcat Json日志和普通错误日志  #######################################  
+[root@db01 ~]# grep -vE "^$|#" /etc/filebeat/filebeat.yml 
+filebeat.inputs:
+- type: log
+  enabled: true 
+  paths:
+    - /var/log/tomcat/localhost_access_log.*.txt
+  json.keys_under_root: true
+  json.overwrite_keys: true
+  tags: ["tomcat"]
+ 
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 3
+setup.kibana:
+  host: "10.0.0.90:5601"
+output.elasticsearch:
+  hosts: ["http://10.0.0.90:9200"]
+  indices:
+    - index: "tomcat-access-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        tags: "tomcat"
+setup.template.name: "nginx"
+setup.template.pattern: "nginx-*"
+setup.template.enabled: false
+setup.template.overwrite: true
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+
+#######################################  Filebeat配置文件——解析Java Json多行日志  #######################################
