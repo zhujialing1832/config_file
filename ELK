@@ -181,7 +181,7 @@ grep -vE "#|^$" /etc/filebeat/filebeat.yml
 filebeat.inputs:
 - type: docker 
   containers.ids:
-    - 'b3d2d12d696325889ddf375299b73426b10b9d17f19461b210adb32cfa97a206'
+    - '*'
  
 filebeat.config.modules:
   path: ${path.config}/modules.d/*.yml
@@ -200,6 +200,108 @@ output.elasticsearch:
       when.contains:
         stream: "stderr"
 
+setup.template.name: "docker"
+setup.template.pattern: "docker-*"
+setup.template.enabled: false
+setup.template.overwrite: true
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+#######################################  Filebeat配置文件——依据服务类型收集Docker日志  #######################################
+编写docker-compose文件：
+version: '3'
+services:
+  nginx:   #  指定为nginx服务
+    image: nginx:v2
+    labels:  # 设置labels
+      service: nginx   # 为nginx:v2容器打了一个标签叫nginx
+    logging:  #  logging设置增加labels.service
+      options:
+        labels: "service"
+    ports:
+      - "8080:80"
+  db:
+    image: nginx:latest
+    labels:  #  设置labels
+      service: db  # 假装把nginx:latest镜像生成的服务是db
+    logging:   #  logging设置增加labels.service
+      options:
+        labels: "service"
+    ports:
+      - "80:80"
+
+#  区分nginx和db的服务类型但是没有分开正确和错误日志
+  [root@db01 ~]# grep -vE "#|^$" /etc/filebeat/filebeat.yml 
+filebeat.inputs:
+- type: log
+  enabled: true 
+  paths:
+    - /var/lib/docker/containers/*/*-json.log 
+  json.keys_under_root: true
+  json.overwrite_keys: true
+ 
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 3
+setup.kibana:
+  host: "10.0.0.90:5601"
+output.elasticsearch:
+  hosts: ["http://10.0.0.90:9200"]
+  indices:
+    - index: "docker-nginx-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        attrs.service: "nginx"
+    - index: "docker-db-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        attrs.service: "db"
+setup.template.name: "docker"
+setup.template.pattern: "docker-*"
+setup.template.enabled: false
+setup.template.overwrite: true
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+#  区分nginx和db的服务类型同时分开正确和错误日志
+[root@db01 ~]# !grep
+grep -vE "#|^$" /etc/filebeat/filebeat.yml 
+filebeat.inputs:
+- type: log
+  enabled: true 
+  paths:
+    - /var/lib/docker/containers/*/*-json.log 
+  json.keys_under_root: true
+  json.overwrite_keys: true
+ 
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 3
+setup.kibana:
+  host: "10.0.0.90:5601"
+output.elasticsearch:
+  hosts: ["http://10.0.0.90:9200"]
+  indices:
+    - index: "docker-nginx-access-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        attrs.service: "nginx"
+        stream: "stdout"
+    - index: "docker-db-access-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        attrs.service: "db"
+        stream: "stdout"
+    - index: "docker-nginx-error-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        attrs.service: "nginx"
+        stream: "stderr"
+    - index: "docker-db-error-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        attrs.service: "db"
+        stream: "stderr"
 setup.template.name: "docker"
 setup.template.pattern: "docker-*"
 setup.template.enabled: false
