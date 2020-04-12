@@ -175,4 +175,35 @@ processors:
   - add_host_metadata: ~
   - add_cloud_metadata: ~
 
-#######################################  Filebeat配置文件——收集Docker日志  #######################################
+#######################################  Filebeat配置文件——收集Docker 正常和错误日志  #######################################
+[root@db01 ~]# !grep
+grep -vE "#|^$" /etc/filebeat/filebeat.yml 
+filebeat.inputs:
+- type: docker 
+  containers.ids:
+    - 'b3d2d12d696325889ddf375299b73426b10b9d17f19461b210adb32cfa97a206'
+ 
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 3
+setup.kibana:
+  host: "10.0.0.90:5601"
+output.elasticsearch:
+  hosts: ["http://10.0.0.90:9200"]
+  indices:
+    - index: "docker-access-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        stream: "stdout"
+    - index: "docker-error-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        stream: "stderr"
+
+setup.template.name: "docker"
+setup.template.pattern: "docker-*"
+setup.template.enabled: false
+setup.template.overwrite: true
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
