@@ -309,3 +309,41 @@ setup.template.overwrite: true
 processors:
   - add_host_metadata: ~
   - add_cloud_metadata: ~
+
+#######################################  Filebeat配置文件——利用自身模块收集nginx普通日志  #######################################
+[root@db01 ~]# grep -vE "#|^$" /etc/filebeat/filebeat.yml 
+filebeat.inputs:
+ 
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: true 
+  reload.period: 10s
+setup.template.settings:
+  index.number_of_shards: 3
+setup.kibana:
+  host: "10.0.0.90:5601"
+output.elasticsearch:
+  hosts: ["http://10.0.0.90:9200"]
+  indices:
+    - index: "nginx-access-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        fileset.name: "access"
+    - index: "nginx-error-%{[beat.version]}-%{+yyyy.MM}"
+      when.contains:
+        fileset.name: "error"
+setup.template.name: "nginx"
+setup.template.pattern: "nginx-*"
+setup.template.enabled: false
+setup.template.overwrite: true
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+[root@db01 ~]# grep -vE "#|^$" /etc/filebeat/modules.d/nginx.yml 
+- module: nginx
+  access:
+    enabled: true
+    var.paths: ["/var/log/nginx/access.log"]
+  error:
+    enabled: true
+    var.paths: ["/var/log/nginx/error.log"]
