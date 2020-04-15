@@ -587,10 +587,161 @@ processors:
   - add_cloud_metadata: ~
 
 
-[root@db02 ~]# cat /etc/logstash/conf.d/redis.conf
+[root@db02 /etc/logstash/conf.d]# cat kafka.conf 
+input{
+  kafka{
+    bootstrap_servers=>"10.0.0.92:9092"
+    topics=>["elklog"]
+    group_id=>"logstash"
+    codec => "json"
+  }
+}
+filter {
+  mutate {
+    convert => ["upstream_time", "float"]                                                                                                                        
+    convert => ["request_time", "float"]
+  }
+}
+output {
+    if "access" in [tags] {
+      elasticsearch {
+        hosts => "http://10.0.0.90:9200"
+        manage_template => false
+        index => "nginx_access-%{+yyyy.MM}"
+      }
+    }
+    if "error" in [tags] {
+      elasticsearch {
+        hosts => "http://10.0.0.90:9200"
+        manage_template => false
+        index => "nginx_error-%{+yyyy.MM}"
+      }
+    }
+}
+
+
+#############################  Nginx+Filebeat+Logstash+Redis+Elasticsearch+Kibana+keepalived日志收集框架  #############################
+[root@db01 ~]# !grep
+grep -vE "#|^$" /etc/filebeat/filebeat.yml
+filebeat.inputs:
+- type: log
+  enabled: true 
+  paths:
+    - /var/log/nginx/access.log
+  json.keys_under_root: true
+  json.overwrite_keys: true
+  tags: ["access"] 
+- type: log
+  enabled: true 
+  paths:
+    - /var/log/nginx/error.log
+  tags: ["error"]
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 3
+setup.kibana:
+  host: "10.0.0.90:5601"
+output.redis:
+  hosts: ["10.0.0.3"]
+  key: "filebeat"
+  
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+
+[root@db01 ~]# cat /etc/nginx/nginx.conf 
+
+user  nginx;
+worker_processes  1;
+
+error_log  /var/log/nginx/error.log warn;
+pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    log_format json  '{ "time_local": "$time_local", '
+                          '"remote_addr": "$remote_addr", '
+                          '"referer": "$http_referer", '
+                          '"request": "$request", '
+                          '"status": $status, '
+                          '"bytes": $body_bytes_sent, '
+                          '"agent": "$http_user_agent", '
+                          '"x_forwarded": "$http_x_forwarded_for", '
+                          '"up_addr": "$upstream_addr",'
+                          '"up_host": "$upstream_http_host",'
+                          '"upstream_time": "$upstream_response_time",'
+                          '"request_time": "$request_time"'
+' }';
+
+
+    access_log  /var/log/nginx/access.log  json;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    include /etc/nginx/conf.d/*.conf;
+
+}
+ stream {
+   upstream redis {
+       server 10.0.0.91:6379 max_fails=2 fail_timeout=10s backup;
+       server 10.0.0.92:6379 max_fails=2 fail_timeout=10s;
+   }
+   
+   server {
+           listen 6379;
+           proxy_connect_timeout 1s;
+           proxy_timeout 3s;
+           proxy_pass redis;
+   }
+ }
+
+[root@db01 ~]# cat /etc/keepalived/keepalived.conf 
+! Configuration File for keepalived
+   
+   global_defs {
+       router_id lb01
+   }
+  
+   vrrp_instance VI_1 {
+       state MASTER
+       interface eth0
+       virtual_router_id 50
+       priority 150
+       advert_int 1
+       authentication {
+           auth_type PASS
+           auth_pass 1111
+       }
+       virtual_ipaddress {
+           10.0.0.3
+       }
+   }
+
+
+[root@db02 /etc/logstash/conf.d]# cat redis.conf 
 input {
   redis {
-    host => "10.0.0.90"
+    host => "10.0.0.3"
     port => "6379"
     db => "0"
     key => "filebeat"
@@ -622,4 +773,14 @@ output {
        }
      }
 }
+
+[root@db02 ~]# cat /opt/redis_cluster/redis_6379/conf/redis_6379.conf 
+daemonize yes
+bind 10.0.0.91 127.0.0.1
+port 6379
+pidfile /opt/redis_cluster/redis_6379/pid/redis_6379.pid
+logfile /opt/redis_cluster/redis_6379/logs/redis_6379.log
+databases 16
+dbfilename redis_6379.rdb
+dir /data/redis_cluster/redis_6379
 
