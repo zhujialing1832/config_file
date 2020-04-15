@@ -347,3 +347,141 @@ processors:
   error:
     enabled: true
     var.paths: ["/var/log/nginx/error.log"]
+    
+#######################################  Filebeat配置文件——将Nginx普通日志发到Redis中  #######################################    
+[root@db01 ~]# !grep
+grep -vE "#|^$" /etc/filebeat/filebeat.yml
+filebeat.inputs:
+- type: log
+  enabled: true 
+  paths:
+    - /var/log/nginx/access.log
+  json.keys_under_root: true
+  json.overwrite_keys: true
+  tags: ["access"] 
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 3
+setup.kibana:
+  host: "10.0.0.90:5601"
+output.redis:
+  hosts: ["10.0.0.90"]
+  key: "filebeat"
+  db: 0
+  timeout: 5
+  
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+[root@db02 ~]# cat  /etc/logstash/conf.d/redis.conf 
+input {
+  redis {
+    host => "10.0.0.90"
+    port => "6379"
+    db => "0"
+    key => "filebeat"
+    data_type => "list"
+  }
+}
+
+filter {
+  mutate {
+    convert => ["upstream_time", "float"]
+    convert => ["request_time", "float"]
+  }
+}
+
+output {
+    stdout {}
+    elasticsearch {
+      hosts => "http://10.0.0.90:9200"
+      manage_template => false
+      index => "nginx-access-%{+yyyy.MM}"
+    }
+}
+
+
+#######################################  Filebeat配置文件——将Nginx普通+错误日志发到Redis中（未优化）  #######################################
+[root@db01 ~]# !grep
+grep -vE "#|^$" /etc/filebeat/filebeat.yml
+filebeat.inputs:
+- type: log
+  enabled: true 
+  paths:
+    - /var/log/nginx/access.log
+  json.keys_under_root: true
+  json.overwrite_keys: true
+  tags: ["access"] 
+- type: log
+  enabled: true 
+  paths:
+    - /var/log/nginx/error.log
+  tags: ["error"]
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+setup.template.settings:
+  index.number_of_shards: 3
+setup.kibana:
+  host: "10.0.0.90:5601"
+output.redis:
+  hosts: ["10.0.0.90"]
+  keys:
+    - key: "nginx_access"
+      when.contains:
+        tags: "access"
+    - key: "nginx_error"
+      when.contains:
+        tags: "error"
+  
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+
+
+[root@db02 ~]# cat /etc/logstash/conf.d/redis.conf 
+input {
+  redis {
+    host => "10.0.0.90"
+    port => "6379"
+    db => "0"
+    key => "nginx_access"
+    data_type => "list"
+  }
+
+  redis {
+    host => "10.0.0.90"
+    port => "6379"
+    db => "0"
+    key => "nginx_error"
+    data_type => "list"
+  }
+}
+
+filter {
+  mutate {
+    convert => ["upstream_time", "float"]
+    convert => ["request_time", "float"]
+  }
+}
+
+output {
+    stdout {}
+     if "access" in [tags] {
+      elasticsearch {
+        hosts => "http://10.0.0.90:9200"
+        manage_template => false
+        index => "nginx_access-%{+yyyy.MM}"
+      }
+     }
+     if "error" in [tags] {
+      elasticsearch {
+        hosts => "http://10.0.0.90:9200"
+        manage_template => false
+        index => "nginx_error-%{+yyyy.MM}"
+       }
+     }
+}
