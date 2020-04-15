@@ -587,3 +587,39 @@ processors:
   - add_cloud_metadata: ~
 
 
+[root@db02 ~]# cat /etc/logstash/conf.d/redis.conf
+input {
+  redis {
+    host => "10.0.0.90"
+    port => "6379"
+    db => "0"
+    key => "filebeat"
+    data_type => "list"
+  }
+}
+
+filter {
+  mutate {
+    convert => ["upstream_time", "float"]
+    convert => ["request_time", "float"]
+  }
+}
+
+output {
+    stdout {}
+     if "access" in [tags] {
+      elasticsearch {
+        hosts => "http://10.0.0.90:9200"
+        manage_template => false
+        index => "nginx_access-%{+yyyy.MM}"
+      }
+     }
+     if "error" in [tags] {
+      elasticsearch {
+        hosts => "http://10.0.0.90:9200"
+        manage_template => false
+        index => "nginx_error-%{+yyyy.MM}"
+       }
+     }
+}
+
