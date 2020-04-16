@@ -14,3 +14,13 @@ server {
         proxy_set_header X-Forward-For $proxy_add_x_forwarded_for;
     }
 }
+
+Tomcat优化：
+1. 安全优化
+    (1). 降权启动
+    (2). telnet管理端口保护
+    (3). ajp连接端口保护
+    (4). 禁用管理段
+2. 性能优化
+    (1). 屏蔽DNS查询====>enableLookpus="false"
+    (2). JVM调优
