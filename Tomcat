@@ -1,0 +1,16 @@
+===============================  Nginx均衡Tomcat后端2个jpress页面  ===============================
+[root@db01 /opt]# cat /etc/nginx/conf.d/tomcat.conf 
+upstream tomcat {
+    server 10.0.0.90:8081;
+    server 10.0.0.90:8082;
+}
+server {
+    listen      80;
+    server_name www.oldzhu.com;
+    location / {
+        proxy_pass      http://tomcat;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forward-For $proxy_add_x_forwarded_for;
+    }
+}
